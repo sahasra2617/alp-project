@@ -60,7 +60,7 @@ app.post('/api/detect-emotion', async (req, res) => {
 
     // For now, return a mock emotion
     // TODO: Replace with actual emotion detection logic
-    const emotions = ['happy', 'sad', 'angry', 'neutral', 'confused', 'excited'];
+    const emotions = ['happy', 'sad', 'angry', 'neutral', 'surprised'];
     const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)];
     
     console.log('Detected emotion:', randomEmotion);
@@ -92,17 +92,6 @@ const auth = async (req, res, next) => {
     res.status(401).json({ message: 'Please authenticate' });
   }
 };
-
-// Email configuration (commented out for development)
-/*
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
-*/
 
 // Signup route
 app.post('/api/auth/signup', async (req, res) => {
@@ -701,28 +690,49 @@ app.post('/api/quiz-in-progress/complete', auth, async (req, res) => {
 app.get('/api/quiz-in-progress', auth, async (req, res) => {
   try {
     const userId = req.user._id;
-    const quizzes = await QuizInProgress.find({ userId, attempted: false })
-      .populate('subjectId', 'name subtopics')
-      .sort({ lastUpdated: -1 });
+    
+    // Find all in-progress quizzes for the user
+    const quizzes = await QuizInProgress.find({ 
+      userId, 
+      attempted: false 
+    })
+    .populate({
+      path: 'subjectId',
+      select: 'name subtopics',
+      model: 'Subject'
+    })
+    .sort({ lastUpdated: -1 });
 
-    // Attach subtopicName to each quiz
+    // Transform the data to include subject and subtopic names
     const quizzesWithNames = quizzes.map(q => {
-      let subtopicName = '';
-      if (q.subjectId && q.subjectId.subtopics && Array.isArray(q.subjectId.subtopics)) {
-        const found = q.subjectId.subtopics.find(st => st._id.toString() === q.subtopicId.toString());
-        if (found) subtopicName = found.name;
-      }
+      const subject = q.subjectId;
+      const subtopic = subject?.subtopics?.find(st => 
+        st._id.toString() === q.subtopicId.toString()
+      );
+      
       return {
-        ...q.toObject(),
-        subjectName: q.subjectId?.name || '',
-        subtopicName
+        subjectId: subject?._id || q.subjectId,
+        subtopicId: q.subtopicId,
+        level: q.level || 1,
+        subjectName: subject?.name || 'Unknown Subject',
+        subtopicName: subtopic?.name || 'Unknown Subtopic',
+        lastUpdated: q.lastUpdated
       };
     });
 
-    res.json({ success: true, quizzes: quizzesWithNames });
+    console.log('Sending quizzes:', quizzesWithNames); // Debug log
+    
+    res.json({ 
+      success: true, 
+      quizzes: quizzesWithNames 
+    });
   } catch (error) {
     console.error('Error fetching quizzes in progress:', error);
-    res.status(500).json({ message: 'Failed to fetch quizzes in progress' });
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to fetch quizzes in progress',
+      error: error.message 
+    });
   }
 });
 

@@ -137,23 +137,41 @@ function Dashboard() {
     const fetchInProgress = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) return;
+        if (!token) {
+          console.error('No authentication token found');
+          return;
+        }
         const response = await axios.get(`${config.apiBaseUrl}/quiz-in-progress`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
         });
-        if (response.data && response.data.success) {
-          setContinueLearning(response.data.quizzes.map(q => ({
-            subjectId: q.subjectId._id || q.subjectId,
-            subtopicId: q.subtopicId,
-            level: q.level,
-            subjectName: q.subjectName || (q.subjectId.name || ''),
-            subtopicName: q.subtopicName || '',
-          })));
+        
+        if (response.data && response.data.success && Array.isArray(response.data.quizzes)) {
+          const formattedQuizzes = response.data.quizzes.map(q => {
+            // Handle both populated and unpopulated subject data
+            const subjectId = q.subjectId?._id || q.subjectId;
+            const subjectName = q.subjectName || (q.subjectId?.name || 'Unknown Subject');
+            const subtopicName = q.subtopicName || 'Unknown Subtopic';
+            
+            return {
+              subjectId,
+              subtopicId: q.subtopicId,
+              level: q.level || 1,
+              subjectName,
+              subtopicName
+            };
+          });
+          
+          console.log('Formatted quizzes:', formattedQuizzes); // Debug log
+          setContinueLearning(formattedQuizzes);
+        } else {
+          console.error('Invalid response format:', response.data);
+          setContinueLearning([]);
         }
       } catch (err) {
+        console.error('Error fetching in-progress quizzes:', err);
         setContinueLearning([]);
       }
     };
@@ -279,7 +297,7 @@ function Dashboard() {
             </li>
             <li onClick={() => navigate('/progress')}>
               <i className="fas fa-chart-bar"></i>
-              <span>Progress</span>
+              <span>History</span>
             </li>
             <li>
               <i className="fas fa-cog"></i>

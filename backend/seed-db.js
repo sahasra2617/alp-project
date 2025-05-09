@@ -1,10 +1,12 @@
+// Import required modules
 const mongoose = require('mongoose');
-require('dotenv').config();
+require('dotenv').config(); // Load environment variables from .env file
 
+// Import the MongoDB connection function and Subject model
 const connectDB = require('./config/db');
 const Subject = require('./models/Subject');
 
-// Sample subjects and subtopics
+// Define sample data for subjects and their subtopics
 const subjects = [
   {
     name: "Java ",
@@ -30,7 +32,6 @@ const subjects = [
       { name: "Inheritance", content: "", generated: false }
     ]
   },
-
   {
     name: "Science",
     description: "Explore the wonders of SCIENCE",
@@ -38,12 +39,23 @@ const subjects = [
     subtopics: [
       { name: "Plants", content: "", generated: false },
       { name: "Animals", content: "", generated: false },
-      { name: "Digestive System", content: "", generated: false },
-      // { name: "", content: "", generated: false },
-      // { name: "Inheritance", content: "", generated: false }
+      { name: "Digestive System", content: "", generated: false }
     ]
   },
-
+  {
+    name: "Computer Organization & Architecture",
+    description: "Computer concepts",
+    imageUrl: "https://example.com/math.jpg",
+    subtopics: [
+      { name: "Basic Computer Organization & Design", content: "", generated: false },
+      { name: "Microprogrammed Control", content: "", generated: false },
+      { name: "Central Processing Unit", content: "", generated: false }, // Note: typo in "Central"
+      { name: "I/O organization", content: "", generated: false },
+      { name: "Memory Organization", content: "", generated: false },
+      { name: "Data Representation", content: "", generated: false },
+      { name: "Computer Arithmetic", content: "", generated: false }
+    ]
+  },
   {
     name: "Mathematics",
     description: "Fundamental mathematics concepts",
@@ -58,31 +70,33 @@ const subjects = [
   }
 ];
 
-// Connect to MongoDB and seed the database
+// Function to seed the database
 const seedDatabase = async () => {
   try {
+    // Step 1: Connect to the database
     await connectDB();
     console.log('Connected to MongoDB');
 
-    // Clear existing subjects
+    // Step 2: Clear existing subjects to avoid duplication
     await Subject.deleteMany({});
     console.log('Cleared existing subjects');
 
-    // Insert new subjects
+    // Step 3: Insert the new subject data
     const insertedSubjects = await Subject.insertMany(subjects);
     console.log(`Inserted ${insertedSubjects.length} subjects`);
 
-    // Log the IDs for reference
+    // Step 4: Log inserted subject names and their IDs
     insertedSubjects.forEach(subject => {
-      console.log(`${subject.name}: ${subject._id}`);
+      console.log(`${subject.name.trim()}: ${subject._id}`);
     });
 
     console.log('Database seeded successfully');
-    process.exit(0);
+    process.exit(0); // Exit successfully
   } catch (error) {
     console.error('Error seeding database:', error);
-    process.exit(1);
+    process.exit(1); // Exit with error
   }
 };
 
-seedDatabase(); 
+// Run the seeding function
+seedDatabase();

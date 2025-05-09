@@ -164,11 +164,16 @@ const Quiz = () => {
   };
 
   const calculateNewLevel = (currentLevel, score, emotion) => {
+    // If already at level 10, stay at level 10
+    if (currentLevel >= 10) {
+      return 10;
+    }
+
     let levelChange = 0;
     
     // Adjust based on score
     if (score >= 80) {
-      levelChange +=2; // Increase level for high scores
+      levelChange +=1; // Increase level for high scores
     } else if (score < 50) {
       levelChange -= 1; // Decrease level for low scores
     }
@@ -184,11 +189,8 @@ const Quiz = () => {
       case 'angry':
         levelChange -= 1; // Decrease level if angry
         break;
-      case 'confused':
-        levelChange -= 1; // Decrease level if confused
-        break;
-      case 'excited':
-        levelChange += 1; // Increase level if excited
+      case 'surprised':
+        levelChange += 1; // Increase level if surprised
         break;
       // neutral emotion doesn't affect level
     }
@@ -324,7 +326,7 @@ const Quiz = () => {
   };
 
   const handleNextQuiz = async () => {
-    if (consecutiveFailures >= 3) {
+    if (consecutiveFailures >= 2) {
       // Show personalized content after 3 failures
       navigate(`/subjects/${subjectId}/subtopics/${subtopicId}/review`, {
         state: {
@@ -538,7 +540,7 @@ const Quiz = () => {
       <div className="quiz-layout">
         <div className="quiz-section">
           <div className="quiz-loading">
-            <button className="home-button" onClick={handleGoHome}>Home</button>
+            <button className="home-button" onClick={handleGoHome}>Want a BREAK?</button>
             <div className="loading-spinner"></div>
             <div className="loading-text">Loading questions...</div>
           </div>
@@ -575,6 +577,8 @@ const Quiz = () => {
     const showGoodEnough = presentLevel === 7 && score >= 60;
     // Show 'Mastered' message if presentLevel is 8 and score >= 60
     const showMastered = presentLevel === 8 && score >= 60;
+    // Show 'Pro' message if presentLevel is 10 and score >= 60
+    const showPro = presentLevel === 10 && score >= 60;
     return (
       <div className="quiz-results">
         <h2>Quiz Complete!</h2>
@@ -604,7 +608,12 @@ const Quiz = () => {
         )}
         {showMastered && (
           <div className="content-suggestion" style={{background: 'linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)', padding: '2em', borderRadius: '16px', margin: '2em 0', color: '#444', fontWeight: 'bold'}}>
-            You have mastered this topic!
+            You have mastered this topic! If you want you can continue with advanced levels...
+          </div>
+        )}
+        {showPro && (
+          <div className="content-suggestion" style={{background: 'linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%)', padding: '2em', borderRadius: '16px', margin: '2em 0', color: '#444', fontWeight: 'bold'}}>
+            Congratulations! You have become a pro in this topic. Move on to other topics!
           </div>
         )}
         {showReviewContent && (
@@ -661,7 +670,7 @@ const Quiz = () => {
                 <span className="level-badge">{getDifficultyText(currentLevel)} (Level {currentLevel})</span>
               </div>
             </div>
-            <button className="home-button" onClick={handleGoHome}>Home</button>
+            <button className="home-button" onClick={handleGoHome}>Want a Break?</button>
           </div>
 
           {questions.length > 0 ? (
